@@ -1,10 +1,12 @@
 import frappe
 from datetime import datetime
 
+
 def has_role(user, role):
     user_roles = frappe.get_roles(user)
     print(user_roles)
     return role in user_roles
+
 
 @frappe.whitelist()
 def before_save(doc, _method):
@@ -14,15 +16,15 @@ def before_save(doc, _method):
         end_date = project.expected_end_date
 
         print(doc.custom_date)
-        if datetime.strptime(doc.custom_date,'%Y-%m-%d').date() < start_date or datetime.strptime(doc.custom_date, '%Y-%m-%d').date() > end_date:
+        if datetime.strptime(doc.custom_date, '%Y-%m-%d').date() < start_date or datetime.strptime(doc.custom_date,
+                                                                                                   '%Y-%m-%d').date() > end_date:
             frappe.throw("Time Log From Time must be between Project Start Date and End Date")
-        
-        
-    
-    today_sheets = frappe.get_all("Timesheet", filters={"employee": doc.employee, "custom_date": doc.custom_date}, fields=["*"])
 
-    if len(today_sheets) > 0 and today_sheets[0].name != doc.name:
-        frappe.throw("Timesheet for "+ doc.custom_date +" already exists")
+    today_sheets = frappe.get_all("Timesheet", filters={"employee": doc.employee, "custom_date": doc.custom_date},
+                                  fields=["*"])
+
+    if len(today_sheets) > 0 and today_sheets[0].name != doc.name and today_sheets[0].docstatus == 1:
+        frappe.throw("An Active Timesheet for " + doc.custom_date + " already exists")
 
     if doc.total_hours > 24:
         frappe.throw("Total Hours must be less than 24")
@@ -37,7 +39,7 @@ def before_save(doc, _method):
             is_holiday = True
             break
 
-    if not is_holiday and doc.total_hours < 8 and not has_role(frappe.session.user,"System Manager") and not has_role(frappe.session.user,"Administrator"):
+    if not is_holiday and doc.total_hours < 8 and not has_role(frappe.session.user, "Administrator"):
         frappe.throw("Total Hours must be at least 8")
 
     previous_to_time = None  # Initialize to None for the first entry
