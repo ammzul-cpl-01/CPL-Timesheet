@@ -26,22 +26,6 @@ def before_save(doc, _method):
     if len(today_sheets) > 0 and today_sheets[0].name != doc.name and today_sheets[0].docstatus == 1:
         frappe.throw("An Active Timesheet for " + doc.custom_date + " already exists")
 
-    if doc.total_hours > 24:
-        frappe.throw("Total Hours must be less than 24")
-
-    employee = frappe.get_doc("Employee", doc.employee)
-    holiday_list = frappe.get_doc("Holiday List", employee.holiday_list)
-    holidays = holiday_list.holidays
-    is_holiday = False
-
-    for holiday in holidays:
-        if str(holiday.holiday_date) == doc.custom_date:
-            is_holiday = True
-            break
-
-    if not is_holiday and doc.total_hours < 8 and not has_role(frappe.session.user, "Administrator"):
-        frappe.throw("Total Hours must be at least 8")
-
     previous_to_time = None  # Initialize to None for the first entry
 
     for time_log in doc.time_logs:
@@ -57,3 +41,22 @@ def before_save(doc, _method):
 
         # Update previous_to_time for the next iteration
         previous_to_time = time_log.to_time
+
+
+@frappe.whitelist()
+def before_submit(doc):
+    employee = frappe.get_doc("Employee", doc.employee)
+    holiday_list = frappe.get_doc("Holiday List", employee.holiday_list)
+    holidays = holiday_list.holidays
+    is_holiday = False
+
+    for holiday in holidays:
+        if str(holiday.holiday_date) == doc.custom_date:
+            is_holiday = True
+            break
+
+    if not is_holiday and doc.total_hours < 8 and not has_role(frappe.session.user, "Administrator"):
+        frappe.throw("Total Hours must be at least 8")
+
+    if doc.total_hours > 24:
+        frappe.throw("Total Hours must be less than 24")
