@@ -16,9 +16,13 @@ def before_save(doc, _method):
         end_date = project.expected_end_date
 
         print(doc.custom_date)
-        if datetime.strptime(doc.custom_date, '%Y-%m-%d').date() < start_date or datetime.strptime(doc.custom_date,
-                                                                                                   '%Y-%m-%d').date() > end_date:
-            frappe.throw("Time Log From Time must be between Project Start Date and End Date")
+        if start_date:
+            if datetime.strptime(doc.custom_date, '%Y-%m-%d').date() < start_date:
+                frappe.throw("Time Log From Time must be between Project Start Date and End Date")
+        if end_date:
+            if datetime.strptime(doc.custom_date,'%Y-%m-%d').date() > end_date:
+                    frappe.throw("Time Log From Time must be between Project Start Date and End Date")
+
 
     today_sheets = frappe.get_all("Timesheet", filters={"employee": doc.employee, "custom_date": doc.custom_date},
                                   fields=["*"])
